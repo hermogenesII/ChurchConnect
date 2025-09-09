@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("client@test.com");
+  const [password, setPassword] = useState("asdfgh");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -23,7 +23,9 @@ export default function LoginPage() {
     if (error) {
       setError(error.message);
     } else {
-      // Middleware will handle role-based redirect after login
+      // Successful login - force full page refresh to sync cookies with server
+      console.log("Login successful, redirecting to /church");
+      window.location.href = "/church";
     }
 
     setLoading(false);

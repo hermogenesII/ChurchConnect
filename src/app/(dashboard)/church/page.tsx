@@ -3,7 +3,20 @@
 import { useAuth } from "@/hooks/use-auth";
 
 export default function AdminDashboard() {
-  const { profile } = useAuth();
+  const { profile, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-neutral-600">Loading dashboard...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">
@@ -13,7 +26,7 @@ export default function AdminDashboard() {
           Dashboard
         </h1>
         <p className="text-neutral-600">
-          Welcome back, {profile?.name}! Here&apos;s what&apos;s happening in
+          Welcome back, {profile?.name || 'Admin'}! Here&apos;s what&apos;s happening in
           your church community.
         </p>
       </div>
