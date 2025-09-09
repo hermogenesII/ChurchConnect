@@ -29,13 +29,19 @@ export function Hero() {
 
           {/* CTA buttons */}
           <div className="mt-10 flex flex-col lg:flex-row gap-4 items-center justify-center px-6 lg:px-0">
-            <button className="bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-2xl shadow-soft hover:shadow-gentle transition-all duration-200 transform hover:scale-105 w-full lg:w-auto py-4 lg:py-3 px-8 text-lg lg:text-base">
+            <a
+              href="/register"
+              className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 w-full lg:w-auto py-4 lg:py-3 px-8 text-lg lg:text-base text-center inline-block"
+            >
               Join Our Community
-            </button>
+            </a>
 
-            <button className="bg-white hover:bg-gray-100 text-gray-900 font-semibold border-2 border-white/20 rounded-2xl shadow-soft hover:shadow-gentle transition-all duration-200 w-full lg:w-auto py-4 lg:py-3 px-8 text-lg lg:text-base">
-              Learn More
-            </button>
+            <a
+              href="/login"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 w-full lg:w-auto py-4 lg:py-3 px-8 text-lg lg:text-base text-center inline-block"
+            >
+              Sign In
+            </a>
           </div>
 
           {/* Trust indicator */}

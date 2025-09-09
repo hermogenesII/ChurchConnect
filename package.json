@@ -6,22 +6,27 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "gen:types": "npx -y supabase gen types typescript --project-id bgfsitsaxzumzricctbs > src/types/database.types.ts",
+    "db:dump": "npx -y supabase db dump --linked > supabase-dump.sql",
+    "db:link": "npx -y supabase link --project-ref bgfsitsaxzumzricctbs"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.57.2",
+    "next": "15.5.2",
     "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "next": "15.5.2"
+    "react-dom": "19.1.0"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
