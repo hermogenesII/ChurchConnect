@@ -66,7 +66,19 @@ export function useAuth() {
       }
     }
 
-    // Listen for auth changes (this handles both initial session and changes)
+    // Get initial session
+    const getInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        await fetchProfile(session.user)
+      } else {
+        if (mounted) {
+          setAuthState({ user: null, profile: null, loading: false })
+        }
+      }
+    }
+
+    // Listen for auth changes (this handles changes after initial load)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session?.user) {
@@ -79,6 +91,9 @@ export function useAuth() {
         }
       }
     )
+
+    // Get initial session
+    getInitialSession()
 
     return () => {
       mounted = false
@@ -107,18 +122,46 @@ export function useAuth() {
     }
   }
 
-  const signUp = async (email: string, password: string, name: string, role: string = 'MEMBER') => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name,
-          role
+  const signUp = async (
+    email: string, 
+    password: string, 
+    name: string, 
+    role: string = 'MEMBER',
+    churchId?: string
+  ) => {
+    try {
+      // First, create the auth user
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            role,
+            church_id: churchId
+          }
+        }
+      })
+
+      if (error) return { data, error }
+
+      // If successful and we have a user, update the profile with church_id
+      if (data.user && churchId) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ church_id: churchId })
+          .eq('id', data.user.id)
+
+        if (profileError) {
+          console.error('Error updating profile with church_id:', profileError)
         }
       }
-    })
-    return { data, error }
+
+      return { data, error }
+    } catch (err) {
+      console.error('SignUp error:', err)
+      return { data: null, error: err as Error }
+    }
   }
 
   const signOut = async () => {

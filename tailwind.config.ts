@@ -21,8 +21,8 @@ const config: Config = {
           600: '#1e40af',  // Deep blue (main primary)
           700: '#1d4ed8',
           800: '#1e3a8a',
-          900: '#1e293b',  // Darkest
-          950: '#0f172a',
+          900: '#000000',  // Pure black
+          950: '#020617',
         },
         // Secondary warm gold
         secondary: {

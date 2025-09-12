@@ -73,7 +73,8 @@ export function RegistrationForm({
       formData.email, 
       formData.password, 
       formData.name,
-      formData.role
+      formData.role,
+      formData.churchId || defaultChurchId
     )
     
     if (signUpError) {
