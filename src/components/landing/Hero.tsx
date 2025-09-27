@@ -1,5 +1,4 @@
 export function Hero() {
-
   return (
     <section
       className="relative bg-cover bg-center bg-no-repeat overflow-hidden min-h-screen flex items-center"
@@ -28,17 +27,17 @@ export function Hero() {
           </p>
 
           {/* CTA buttons */}
-          <div className="mt-10 flex flex-col lg:flex-row gap-4 items-center justify-center px-6 lg:px-0">
+          <div className="mt-10 flex flex-col md:flex-row gap-4 items-center justify-center px-6 md:px-0">
             <a
               href="/register"
-              className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 w-full lg:w-auto py-4 lg:py-3 px-8 text-lg lg:text-base text-center inline-block"
+              className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 w-full md:w-auto py-4 md:py-3 px-8 text-lg md:text-base text-center inline-block"
             >
               Join Our Community
             </a>
 
             <a
               href="/login"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 w-full lg:w-auto py-4 lg:py-3 px-8 text-lg lg:text-base text-center inline-block"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 w-full md:w-auto py-4 md:py-3 px-8 text-lg md:text-base text-center inline-block"
             >
               Sign In
             </a>

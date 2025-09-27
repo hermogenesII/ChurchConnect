@@ -8,8 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "gen:types": "npx -y supabase gen types typescript --project-id bgfsitsaxzumzricctbs > src/types/database.types.ts",
-    "db:dump": "npx -y supabase db dump --linked > supabase-dump.sql",
-    "db:link": "npx -y supabase link --project-ref bgfsitsaxzumzricctbs"
+    "db:dump": "npx -y supabase db dump > supabase-dump.sql"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

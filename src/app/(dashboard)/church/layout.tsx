@@ -2,15 +2,20 @@
 
 import { useAuth } from '@/hooks/use-auth'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 export default function ChurchLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { user, profile, loading, isAdmin } = useAuth()
+  const { user, profile, loading, isAdmin, signOut } = useAuth()
   const router = useRouter()
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false)
+  const [modalVisible, setModalVisible] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const cancelButtonRef = useRef<HTMLButtonElement>(null)
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!loading) {
@@ -25,6 +30,48 @@ export default function ChurchLayout({
       }
     }
   }, [user, profile, loading, isAdmin, router])
+
+  // Keyboard support and modal animation
+  useEffect(() => {
+    if (showSignOutConfirm) {
+      // Add entrance animation delay
+      setTimeout(() => setModalVisible(true), 10)
+
+      // Focus on cancel button for accessibility
+      setTimeout(() => cancelButtonRef.current?.focus(), 100)
+
+      // ESC key to close modal
+      const handleEsc = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          handleCloseModal()
+        }
+      }
+
+      document.addEventListener('keydown', handleEsc)
+      return () => document.removeEventListener('keydown', handleEsc)
+    } else {
+      setModalVisible(false)
+    }
+  }, [showSignOutConfirm])
+
+  const handleCloseModal = () => {
+    setModalVisible(false)
+    setTimeout(() => setShowSignOutConfirm(false), 200) // Allow exit animation
+  }
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false)
+      }
+    }
+
+    if (showUserMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showUserMenu])
 
   if (loading) {
     return (
@@ -86,21 +133,50 @@ export default function ChurchLayout({
             </div>
           </nav>
 
-          {/* User info */}
-          <div className="p-4 border-t border-gray-200">
-            <div className="flex items-center">
+          {/* User Profile Dropdown */}
+          <div className="p-4 border-t border-gray-200 relative" ref={userMenuRef}>
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="w-full flex items-center p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+            >
               <div className="flex-shrink-0">
-                <div className="h-8 w-8 bg-primary-600 rounded-full flex items-center justify-center">
+                <div className="h-10 w-10 bg-primary-600 rounded-full flex items-center justify-center">
                   <span className="text-sm font-semibold text-white">
                     {profile?.name?.charAt(0).toUpperCase()}
                   </span>
                 </div>
               </div>
-              <div className="ml-3">
+              <div className="ml-3 flex-1 text-left">
                 <p className="text-sm font-medium text-gray-900">{profile?.name}</p>
                 <p className="text-xs text-gray-500 capitalize">{profile?.role?.toLowerCase().replace('_', ' ')}</p>
               </div>
-            </div>
+              <svg
+                className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Dropdown Menu */}
+            {showUserMenu && (
+              <div className="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false)
+                    setShowSignOutConfirm(true)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:text-error-600 hover:bg-error-50 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </aside>
@@ -111,6 +187,60 @@ export default function ChurchLayout({
           {children}
         </main>
       </div>
+
+      {/* Sign Out Confirmation Modal */}
+      {showSignOutConfirm && (
+        <div className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300 ${modalVisible ? 'backdrop-blur-md bg-white/30' : 'backdrop-blur-0 bg-transparent'}`}>
+          {/* Background overlay */}
+          <div
+            className="absolute inset-0"
+            onClick={handleCloseModal}
+          ></div>
+
+          {/* Modal */}
+          <div className={`relative bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 max-w-md w-full mx-auto transform transition-all duration-300 ${modalVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
+            <div className="p-6">
+              {/* Icon */}
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-error-100 mb-4">
+                <svg className="h-6 w-6 text-error-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+
+              {/* Content */}
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-primary-900 mb-2">
+                  Sign Out Confirmation
+                </h3>
+                <p className="text-neutral-600 mb-6">
+                  Are you sure you want to sign out? Any unsaved changes will be lost.
+                </p>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  ref={cancelButtonRef}
+                  onClick={handleCloseModal}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    handleCloseModal();
+                    await signOut();
+                    window.location.href = '/login';
+                  }}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-white bg-error-600 hover:bg-error-700 rounded-lg transition-colors focus:ring-2 focus:ring-error-300 focus:outline-none"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

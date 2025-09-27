@@ -39,20 +39,25 @@ export function useAuth() {
         if (!mounted) return // Component unmounted
 
         if (error) {
-          console.error('Profile fetch error details:', {
-            code: error.code,
-            message: error.message,
-            details: error.details,
-            hint: error.hint
-          })
-          
-          // Check if it's a "relation does not exist" error (table not created yet)
-          if (error.message?.includes('relation') || error.code === 'PGRST116') {
-            console.warn('Database tables not set up yet. Please run the database-setup.sql script in Supabase.')
-          } else if (error.code === 'PGRST116') {
-            console.warn('No profile found for user. Creating profile may be needed.')
+          // Handle database setup issues gracefully
+          const isEmptyError = !error.code && !error.message && Object.keys(error).length === 0
+          const isTableMissing = error.message?.includes('relation') || error.code === 'PGRST116' || isEmptyError
+
+          if (isTableMissing) {
+            // Only show this warning once per session
+            if (!sessionStorage.getItem('database-warning-shown')) {
+              console.warn('⚠️ Database tables not found. Please run the supabase-dump.sql script in your Supabase SQL Editor.')
+              sessionStorage.setItem('database-warning-shown', 'true')
+            }
           } else {
-            console.error('Error fetching profile:', error)
+            // Only log real errors in development
+            if (process.env.NODE_ENV === 'development') {
+              console.error('Profile fetch error:', {
+                code: error.code,
+                message: error.message,
+                details: error.details
+              })
+            }
           }
           setAuthState({ user, profile: null, loading: false })
         } else {
@@ -108,24 +113,46 @@ export function useAuth() {
         email,
         password
       })
-      
+
       if (error) {
-        console.error('Sign in error:', error)
-        return { error }
+        // Only log detailed errors in development, not user-friendly auth failures
+        if (process.env.NODE_ENV === 'development' && error.message !== 'Invalid login credentials') {
+          console.error('Sign in error:', error)
+        }
+
+        // Convert Supabase auth errors to user-friendly messages
+        let userFriendlyMessage = error.message
+
+        if (error.message === 'Invalid login credentials') {
+          userFriendlyMessage = 'The email or password you entered is incorrect. Please check your credentials and try again.'
+        } else if (error.message.includes('Email not confirmed')) {
+          userFriendlyMessage = 'Please check your email and click the confirmation link before signing in.'
+        } else if (error.message.includes('Too many requests')) {
+          userFriendlyMessage = 'Too many login attempts. Please wait a moment and try again.'
+        } else if (error.message.includes('User not found')) {
+          userFriendlyMessage = 'No account found with this email address. Please check your email or create a new account.'
+        } else if (error.message.includes('network')) {
+          userFriendlyMessage = 'Network error. Please check your internet connection and try again.'
+        }
+
+        return { error: { ...error, message: userFriendlyMessage } }
       }
-      
+
       console.log('Sign in successful:', data.user?.email)
       return { error: null }
     } catch (err) {
       console.error('Sign in exception:', err)
-      return { error: err as Error }
+      const friendlyError = {
+        message: 'An unexpected error occurred. Please try again or contact support if the problem persists.'
+      }
+      return { error: friendlyError as Error }
     }
   }
 
   const signUp = async (
-    email: string, 
-    password: string, 
-    name: string, 
+    email: string,
+    password: string,
+    name: string,
     role: string = 'MEMBER',
     churchId?: string
   ) => {
