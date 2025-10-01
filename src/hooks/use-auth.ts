@@ -10,6 +10,18 @@ interface AuthState {
   loading: boolean
 }
 
+/**
+ * Custom hook for authentication state management
+ *
+ * Features:
+ * - Manages user authentication state
+ * - Fetches user profile from database
+ * - Handles sign in/out/up operations
+ * - Provides role-based helper functions (isAdmin, isMember, etc.)
+ * - Gracefully handles database setup issues with timeout
+ *
+ * @returns Auth state and methods for authentication
+ */
 export function useAuth() {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
@@ -51,7 +63,7 @@ export function useAuth() {
         } else {
           setAuthState({ user, profile, loading: false })
         }
-      } catch (error) {
+      } catch {
         if (!mounted) return
         setAuthState({ user, profile: null, loading: false })
       } finally {
@@ -105,7 +117,7 @@ export function useAuth() {
       }
 
       return { error: null }
-    } catch (err) {
+    } catch {
       const friendlyError = {
         message: 'An unexpected error occurred. Please try again or contact support if the problem persists.'
       }

@@ -3,9 +3,19 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { Database } from '@/types/database.types'
 
+/**
+ * Middleware for authentication and route protection
+ *
+ * This middleware:
+ * 1. Validates user sessions on every request
+ * 2. Protects routes that require authentication
+ * 3. Redirects users based on their role (admin vs member)
+ * 4. Handles session cookies properly for SSR
+ */
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
 
+  // Create Supabase client for server-side auth
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -47,25 +57,26 @@ export async function middleware(req: NextRequest) {
 
   try {
     // Validate session by contacting Supabase Auth server
-    // Using getUser() instead of getSession() for security
+    // We use getUser() instead of getSession() because it validates with the auth server
+    // This prevents stale session issues
     const { data: { user } } = await supabase.auth.getUser()
 
-    // Public routes that don't require authentication
+    // Define public routes (accessible without authentication)
     const publicRoutes = ['/', '/login', '/register', '/apply-church']
+    const isPublicRoute = publicRoutes.some(route =>
+      pathname === route || pathname.startsWith('/api/public')
+    )
 
-    // Check if current path is public
-    const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith('/api/public'))
-
-    // If no user and trying to access protected route
+    // Redirect unauthenticated users to login
     if (!user && !isPublicRoute) {
       url.pathname = '/login'
       return NextResponse.redirect(url)
     }
 
-    // If has user but trying to access auth pages
+    // Redirect authenticated users away from auth pages
     if (user && (pathname === '/login' || pathname === '/register')) {
-      // Get user profile to determine redirect (with error handling)
       try {
+        // Fetch user profile to determine their role
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
@@ -73,18 +84,15 @@ export async function middleware(req: NextRequest) {
           .single()
 
         if (profile) {
-          // Redirect based on role
-          if (profile.role === 'CHURCH_ADMIN' || profile.role === 'SYSTEM_ADMIN') {
-            url.pathname = '/church'
-          } else {
-            url.pathname = '/member'
-          }
+          // Redirect based on user role
+          const isAdmin = profile.role === 'CHURCH_ADMIN' || profile.role === 'SYSTEM_ADMIN'
+          url.pathname = isAdmin ? '/church' : '/member'
           return NextResponse.redirect(url)
         }
-        // If no profile, allow access to auth pages to show error
-      } catch (error) {
-        // Don't redirect if profile doesn't exist - let the page handle it
-        // This prevents redirect loops when database isn't set up
+        // If no profile exists, allow access to show error message on the page
+      } catch {
+        // If profile fetch fails (e.g., database not set up), allow access
+        // The page will show an appropriate error message
       }
     }
 
@@ -103,13 +111,13 @@ export async function middleware(req: NextRequest) {
           // url.pathname = '/member'
           // return NextResponse.redirect(url)
         }
-      } catch (error) {
+      } catch {
         // Allow access if profile doesn't exist (development fallback)
       }
     }
 
     return res
-  } catch (error) {
+  } catch {
     return res
   }
 }

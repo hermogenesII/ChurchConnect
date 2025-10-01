@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export function Hero() {
   return (
     <section
@@ -5,12 +7,13 @@ export function Hero() {
       style={{
         backgroundImage: "url('/images/background/church.avif')",
       }}
+      aria-label="Hero section"
     >
       {/* Dark overlay for text readability */}
-      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 bg-black/40" aria-hidden="true" />
 
       {/* Gradient overlay for warmth */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary-900/20 to-secondary-900/20" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary-900/20 to-secondary-900/20" aria-hidden="true" />
 
       <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center">
@@ -28,19 +31,19 @@ export function Hero() {
 
           {/* CTA buttons */}
           <div className="mt-10 flex flex-col md:flex-row gap-4 items-center justify-center px-6 md:px-0">
-            <a
+            <Link
               href="/register"
               className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 w-full md:w-auto py-4 md:py-3 px-8 text-lg md:text-base text-center inline-block"
             >
               Join Our Community
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/login"
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 w-full md:w-auto py-4 md:py-3 px-8 text-lg md:text-base text-center inline-block"
             >
               Sign In
-            </a>
+            </Link>
           </div>
 
           {/* Trust indicator */}
