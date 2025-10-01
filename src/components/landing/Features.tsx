@@ -41,10 +41,10 @@ const features = [
   }
 ] as const
 
-type ColorType = typeof features[0]['color']
+type ColorType = typeof features[number]['color']
 
 const getColorClasses = (color: ColorType) => {
-  const colorMap = {
+  const colorMap: Record<ColorType, string> = {
     primary: 'bg-primary-50 text-primary-700 border-primary-200',
     secondary: 'bg-secondary-50 text-secondary-700 border-secondary-200',
     spiritual: 'bg-spiritual-50 text-spiritual-700 border-spiritual-200',

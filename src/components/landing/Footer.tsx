@@ -27,6 +27,7 @@ const footerLinks = {
     title: 'Company',
     links: [
       { name: 'About Us', href: '/about' },
+      { name: 'Register Your Church', href: '/apply-church', highlight: true },
       { name: 'Careers', href: '/careers' },
       { name: 'Press', href: '/press' },
       { name: 'Partners', href: '/partners' },
@@ -124,11 +125,15 @@ export function Footer() {
             <div key={section.title}>
               <h3 className="font-semibold text-white mb-4">{section.title}</h3>
               <ul className="space-y-2">
-                {section.links.map((link) => (
+                {section.links.map((link: { name: string; href: string; highlight?: boolean }) => (
                   <li key={link.name}>
                     <a
                       href={link.href}
-                      className="text-gray-400 hover:text-white transition-colors duration-200 text-sm"
+                      className={`text-sm transition-colors duration-200 ${
+                        link.highlight
+                          ? 'text-primary-400 hover:text-primary-300 font-semibold'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
                     >
                       {link.name}
                     </a>

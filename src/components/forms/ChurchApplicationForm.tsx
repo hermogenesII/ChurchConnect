@@ -159,32 +159,33 @@ export function ChurchApplicationForm() {
       if (isExistingUser) {
         // Existing user application
         const { data } = await supabase.rpc(
-          "submit_church_application_existing_user" as any,
+          "submit_church_application_existing_user",
           {
             p_church_name: formData.churchName,
-            p_church_denomination: formData.churchDenomination || null,
-            p_church_address: formData.churchAddress || null,
-            p_church_city: formData.churchCity || null,
-            p_church_state: formData.churchState || null,
-            p_church_zip: formData.churchZip || null,
-            p_church_phone: formData.churchPhone || null,
-            p_church_email: formData.churchEmail || null,
-            p_church_website: formData.churchWebsite || null,
+            p_church_denomination: formData.churchDenomination || undefined,
+            p_church_address: formData.churchAddress || undefined,
+            p_church_city: formData.churchCity || undefined,
+            p_church_state: formData.churchState || undefined,
+            p_church_zip: formData.churchZip || undefined,
+            p_church_phone: formData.churchPhone || undefined,
+            p_church_email: formData.churchEmail || undefined,
+            p_church_website: formData.churchWebsite || undefined,
             p_church_founded_year: formData.churchFoundedYear
               ? parseInt(formData.churchFoundedYear)
-              : null,
+              : undefined,
             p_estimated_congregation_size: formData.estimatedCongregationSize
               ? parseInt(formData.estimatedCongregationSize)
-              : null,
-            p_current_church_software: formData.currentChurchSoftware || null,
+              : undefined,
+            p_current_church_software:
+              formData.currentChurchSoftware || undefined,
             p_leadership_position: formData.leadershipPosition,
             p_years_in_position: formData.yearsInPosition
               ? parseInt(formData.yearsInPosition)
-              : null,
+              : undefined,
             p_leadership_verification_method:
-              formData.leadershipVerificationMethod || null,
-            p_motivation: formData.motivation || null,
-            p_current_challenges: formData.currentChallenges || null,
+              formData.leadershipVerificationMethod || undefined,
+            p_motivation: formData.motivation || undefined,
+            p_current_challenges: formData.currentChallenges || undefined,
             p_applicant_title: formData.applicantTitle,
           }
         );
@@ -193,44 +194,48 @@ export function ChurchApplicationForm() {
       } else {
         // New user application
         const { data } = await supabase.rpc(
-          "submit_church_application_new_user" as any,
+          "submit_church_application_new_user",
           {
             p_applicant_name: formData.applicantName,
             p_applicant_email: formData.applicantEmail,
-            p_applicant_phone: formData.applicantPhone || null,
+            p_applicant_phone: formData.applicantPhone || undefined,
             p_applicant_title: formData.applicantTitle,
             p_church_name: formData.churchName,
-            p_church_denomination: formData.churchDenomination || null,
-            p_church_address: formData.churchAddress || null,
-            p_church_city: formData.churchCity || null,
-            p_church_state: formData.churchState || null,
-            p_church_zip: formData.churchZip || null,
-            p_church_phone: formData.churchPhone || null,
-            p_church_email: formData.churchEmail || null,
-            p_church_website: formData.churchWebsite || null,
+            p_church_denomination: formData.churchDenomination || undefined,
+            p_church_address: formData.churchAddress || undefined,
+            p_church_city: formData.churchCity || undefined,
+            p_church_state: formData.churchState || undefined,
+            p_church_zip: formData.churchZip || undefined,
+            p_church_phone: formData.churchPhone || undefined,
+            p_church_email: formData.churchEmail || undefined,
+            p_church_website: formData.churchWebsite || undefined,
             p_church_founded_year: formData.churchFoundedYear
               ? parseInt(formData.churchFoundedYear)
-              : null,
+              : undefined,
             p_estimated_congregation_size: formData.estimatedCongregationSize
               ? parseInt(formData.estimatedCongregationSize)
-              : null,
-            p_current_church_software: formData.currentChurchSoftware || null,
+              : undefined,
+            p_current_church_software:
+              formData.currentChurchSoftware || undefined,
             p_leadership_position: formData.leadershipPosition,
             p_years_in_position: formData.yearsInPosition
               ? parseInt(formData.yearsInPosition)
-              : null,
+              : undefined,
             p_leadership_verification_method:
-              formData.leadershipVerificationMethod || null,
-            p_motivation: formData.motivation || null,
-            p_current_challenges: formData.currentChallenges || null,
+              formData.leadershipVerificationMethod || undefined,
+            p_motivation: formData.motivation || undefined,
+            p_current_challenges: formData.currentChallenges || undefined,
           }
         );
 
         result = data;
       }
 
-      if (!(result as any)?.success) {
-        throw new Error((result as any)?.error || "Failed to submit application");
+      if (!(result as { success?: boolean; error?: string })?.success) {
+        throw new Error(
+          (result as { success?: boolean; error?: string })?.error ||
+            "Failed to submit application"
+        );
       }
 
       setIsSubmitted(true);
