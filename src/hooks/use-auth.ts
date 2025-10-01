@@ -19,86 +19,58 @@ export function useAuth() {
 
   useEffect(() => {
     let mounted = true
-    let currentUserId: string | null = null
+    let fetchingProfile = false
 
-    // Fetch user profile (with duplicate prevention)
+    // Fetch user profile with timeout
     const fetchProfile = async (user: User) => {
-      // Prevent duplicate fetches for the same user
-      if (currentUserId === user.id || !mounted) return
-      currentUserId = user.id
+      // Prevent concurrent fetches
+      if (fetchingProfile || !mounted) return
+      fetchingProfile = true
 
       try {
-        console.log('Fetching profile for user:', user.email, user.id)
-        
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single()
+        // Fetch profile with 2 second timeout
+        const { data: profile, error } = await Promise.race([
+          supabase.from('profiles').select('*').eq('id', user.id).single(),
+          new Promise<{ data: null; error: Error }>((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), 2000)
+          )
+        ]).catch(() => ({ data: null, error: { message: 'timeout' } }))
 
-        if (!mounted) return // Component unmounted
+        if (!mounted) return
 
-        if (error) {
-          // Handle database setup issues gracefully
-          const isEmptyError = !error.code && !error.message && Object.keys(error).length === 0
-          const isTableMissing = error.message?.includes('relation') || error.code === 'PGRST116' || isEmptyError
-
-          if (isTableMissing) {
-            // Only show this warning once per session
-            if (!sessionStorage.getItem('database-warning-shown')) {
-              console.warn('⚠️ Database tables not found. Please run the supabase-dump.sql script in your Supabase SQL Editor.')
-              sessionStorage.setItem('database-warning-shown', 'true')
-            }
-          } else {
-            // Only log real errors in development
-            if (process.env.NODE_ENV === 'development') {
-              console.error('Profile fetch error:', {
-                code: error.code,
-                message: error.message,
-                details: error.details
-              })
+        // If error (including timeout), just set user without profile
+        if (error || !profile) {
+          if (error?.message && !error.message.includes('timeout')) {
+            // Show database warning once
+            if (!sessionStorage.getItem('db-warning')) {
+              console.warn('⚠️ Database not set up. Run supabase-dump.sql in Supabase SQL Editor.')
+              sessionStorage.setItem('db-warning', '1')
             }
           }
           setAuthState({ user, profile: null, loading: false })
         } else {
-          console.log('Profile fetched successfully:', profile)
           setAuthState({ user, profile, loading: false })
         }
       } catch (error) {
         if (!mounted) return
-        console.error('Profile fetch exception:', error)
         setAuthState({ user, profile: null, loading: false })
+      } finally {
+        fetchingProfile = false
       }
     }
 
-    // Get initial session
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        await fetchProfile(session.user)
-      } else {
-        if (mounted) {
-          setAuthState({ user: null, profile: null, loading: false })
-        }
-      }
-    }
-
-    // Listen for auth changes (this handles changes after initial load)
+    // Listen for auth changes (handles both initial and subsequent changes)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session?.user) {
           await fetchProfile(session.user)
         } else {
-          currentUserId = null
           if (mounted) {
             setAuthState({ user: null, profile: null, loading: false })
           }
         }
       }
     )
-
-    // Get initial session
-    getInitialSession()
 
     return () => {
       mounted = false
@@ -108,18 +80,12 @@ export function useAuth() {
 
   const signIn = async (email: string, password: string) => {
     try {
-      console.log('Attempting sign in for:', email)
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password
       })
 
       if (error) {
-        // Only log detailed errors in development, not user-friendly auth failures
-        if (process.env.NODE_ENV === 'development' && error.message !== 'Invalid login credentials') {
-          console.error('Sign in error:', error)
-        }
-
         // Convert Supabase auth errors to user-friendly messages
         let userFriendlyMessage = error.message
 
@@ -138,10 +104,8 @@ export function useAuth() {
         return { error: { ...error, message: userFriendlyMessage } }
       }
 
-      console.log('Sign in successful:', data.user?.email)
       return { error: null }
     } catch (err) {
-      console.error('Sign in exception:', err)
       const friendlyError = {
         message: 'An unexpected error occurred. Please try again or contact support if the problem persists.'
       }
@@ -174,19 +138,14 @@ export function useAuth() {
 
       // If successful and we have a user, update the profile with church_id
       if (data.user && churchId) {
-        const { error: profileError } = await supabase
+        await supabase
           .from('profiles')
           .update({ church_id: churchId })
           .eq('id', data.user.id)
-
-        if (profileError) {
-          console.error('Error updating profile with church_id:', profileError)
-        }
       }
 
       return { data, error }
     } catch (err) {
-      console.error('SignUp error:', err)
       return { data: null, error: err as Error }
     }
   }

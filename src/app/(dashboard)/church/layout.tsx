@@ -1,77 +1,86 @@
-'use client'
+"use client";
 
-import { useAuth } from '@/hooks/use-auth'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState, useRef } from 'react'
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
 
 export default function ChurchLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const { user, profile, loading, isAdmin, signOut } = useAuth()
-  const router = useRouter()
-  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false)
-  const [modalVisible, setModalVisible] = useState(false)
-  const [showUserMenu, setShowUserMenu] = useState(false)
-  const cancelButtonRef = useRef<HTMLButtonElement>(null)
-  const userMenuRef = useRef<HTMLDivElement>(null)
+  const { user, profile, loading, isAdmin, signOut } = useAuth();
+  const router = useRouter();
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        router.push('/login')
-        return
+        router.push("/login");
+        return;
       }
-      
+
+      if (!profile) {
+        // Don't redirect - let the component show a setup message
+        return;
+      }
+
       if (!isAdmin()) {
-        router.push('/member') // Redirect members to member dashboard
-        return
+        router.push("/member"); // Redirect members to member dashboard
+        return;
       }
     }
-  }, [user, profile, loading, isAdmin, router])
+  }, [user, profile, loading, isAdmin, router]);
 
   // Keyboard support and modal animation
   useEffect(() => {
     if (showSignOutConfirm) {
       // Add entrance animation delay
-      setTimeout(() => setModalVisible(true), 10)
+      setTimeout(() => setModalVisible(true), 10);
 
       // Focus on cancel button for accessibility
-      setTimeout(() => cancelButtonRef.current?.focus(), 100)
+      setTimeout(() => cancelButtonRef.current?.focus(), 100);
 
       // ESC key to close modal
       const handleEsc = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          handleCloseModal()
+        if (e.key === "Escape") {
+          handleCloseModal();
         }
-      }
+      };
 
-      document.addEventListener('keydown', handleEsc)
-      return () => document.removeEventListener('keydown', handleEsc)
+      document.addEventListener("keydown", handleEsc);
+      return () => document.removeEventListener("keydown", handleEsc);
     } else {
-      setModalVisible(false)
+      setModalVisible(false);
     }
-  }, [showSignOutConfirm])
+  }, [showSignOutConfirm]);
 
   const handleCloseModal = () => {
-    setModalVisible(false)
-    setTimeout(() => setShowSignOutConfirm(false), 200) // Allow exit animation
-  }
+    setModalVisible(false);
+    setTimeout(() => setShowSignOutConfirm(false), 200); // Allow exit animation
+  };
 
   // Close user menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setShowUserMenu(false)
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowUserMenu(false);
       }
-    }
+    };
 
     if (showUserMenu) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
-  }, [showUserMenu])
+  }, [showUserMenu]);
 
   if (loading) {
     return (
@@ -81,11 +90,63 @@ export default function ChurchLayout({
           <p className="text-neutral-600">Loading...</p>
         </div>
       </div>
-    )
+    );
   }
 
-  if (!user || !isAdmin()) {
-    return null // Redirect is handling navigation
+  // If no user, redirect is handling it - show nothing
+  if (!user) {
+    return null;
+  }
+
+  // If user exists but no profile, show setup message
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="w-16 h-16 bg-warning-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">⚠️</span>
+          </div>
+          <h2 className="text-2xl font-bold text-neutral-900 mb-3">
+            Profile Setup Required
+          </h2>
+          <p className="text-neutral-600 mb-6">
+            Your account exists but your profile hasn&apos;t been set up yet.
+            This usually means:
+          </p>
+          <ul className="text-left text-sm text-neutral-600 space-y-2 mb-6">
+            <li className="flex items-start gap-2">
+              <span className="text-primary-600 font-bold">•</span>
+              <span>The database tables haven&apos;t been created yet</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary-600 font-bold">•</span>
+              <span>Your profile needs to be created by an administrator</span>
+            </li>
+          </ul>
+          <div className="bg-neutral-50 rounded-lg p-4 text-sm text-neutral-600 mb-6">
+            <p className="font-semibold mb-2">For Developers:</p>
+            <p className="text-xs">
+              Run the{" "}
+              <code className="bg-neutral-200 px-1 rounded">
+                supabase-dump.sql
+              </code>{" "}
+              script in your Supabase SQL Editor to create the required tables.
+            </p>
+          </div>
+          <button
+            onClick={() => signOut().then(() => router.push("/login"))}
+            className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is not admin, redirect is handling it
+  if (!isAdmin()) {
+    return null;
   }
 
   return (
@@ -103,7 +164,7 @@ export default function ChurchLayout({
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2">
             <NavItem href="/church" icon="🏠" label="Dashboard" />
-            
+
             {/* Church Management */}
             <div className="pt-4">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">
@@ -111,7 +172,11 @@ export default function ChurchLayout({
               </p>
               <NavItem href="/church/members" icon="👥" label="Members" />
               <NavItem href="/church/events" icon="📅" label="Events" />
-              <NavItem href="/church/announcements" icon="📢" label="Announcements" />
+              <NavItem
+                href="/church/announcements"
+                icon="📢"
+                label="Announcements"
+              />
             </div>
 
             {/* Resources */}
@@ -119,9 +184,17 @@ export default function ChurchLayout({
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">
                 Resources
               </p>
-              <NavItem href="/church/files" icon="📁" label="Files & Documents" />
+              <NavItem
+                href="/church/files"
+                icon="📁"
+                label="Files & Documents"
+              />
               <NavItem href="/church/inventory" icon="📦" label="Inventory" />
-              <NavItem href="/church/information" icon="🏛️" label="Church Info" />
+              <NavItem
+                href="/church/information"
+                icon="🏛️"
+                label="Church Info"
+              />
             </div>
 
             {/* Analytics */}
@@ -134,7 +207,10 @@ export default function ChurchLayout({
           </nav>
 
           {/* User Profile Dropdown */}
-          <div className="p-4 border-t border-gray-200 relative" ref={userMenuRef}>
+          <div
+            className="p-4 border-t border-gray-200 relative"
+            ref={userMenuRef}
+          >
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="w-full flex items-center p-3 rounded-xl hover:bg-gray-50 transition-colors group"
@@ -147,16 +223,27 @@ export default function ChurchLayout({
                 </div>
               </div>
               <div className="ml-3 flex-1 text-left">
-                <p className="text-sm font-medium text-gray-900">{profile?.name}</p>
-                <p className="text-xs text-gray-500 capitalize">{profile?.role?.toLowerCase().replace('_', ' ')}</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {profile?.name}
+                </p>
+                <p className="text-xs text-gray-500 capitalize">
+                  {profile?.role?.toLowerCase().replace("_", " ")}
+                </p>
               </div>
               <svg
-                className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`}
+                className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                  showUserMenu ? "rotate-180" : ""
+                }`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
               </svg>
             </button>
 
@@ -165,13 +252,23 @@ export default function ChurchLayout({
               <div className="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
                 <button
                   onClick={() => {
-                    setShowUserMenu(false)
-                    setShowSignOutConfirm(true)
+                    setShowUserMenu(false);
+                    setShowSignOutConfirm(true);
                   }}
                   className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:text-error-600 hover:bg-error-50 transition-colors"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
                   </svg>
                   Sign Out
                 </button>
@@ -183,27 +280,42 @@ export default function ChurchLayout({
 
       {/* Main content */}
       <div className="lg:pl-64 flex flex-col flex-1">
-        <main className="flex-1">
-          {children}
-        </main>
+        <main className="flex-1">{children}</main>
       </div>
 
       {/* Sign Out Confirmation Modal */}
       {showSignOutConfirm && (
-        <div className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300 ${modalVisible ? 'backdrop-blur-md bg-white/30' : 'backdrop-blur-0 bg-transparent'}`}>
+        <div
+          className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300 ${
+            modalVisible
+              ? "backdrop-blur-md bg-white/30"
+              : "backdrop-blur-0 bg-transparent"
+          }`}
+        >
           {/* Background overlay */}
-          <div
-            className="absolute inset-0"
-            onClick={handleCloseModal}
-          ></div>
+          <div className="absolute inset-0" onClick={handleCloseModal}></div>
 
           {/* Modal */}
-          <div className={`relative bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 max-w-md w-full mx-auto transform transition-all duration-300 ${modalVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
+          <div
+            className={`relative bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 max-w-md w-full mx-auto transform transition-all duration-300 ${
+              modalVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
+            }`}
+          >
             <div className="p-6">
               {/* Icon */}
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-error-100 mb-4">
-                <svg className="h-6 w-6 text-error-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                <svg
+                  className="h-6 w-6 text-error-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
                 </svg>
               </div>
 
@@ -213,7 +325,8 @@ export default function ChurchLayout({
                   Sign Out Confirmation
                 </h3>
                 <p className="text-neutral-600 mb-6">
-                  Are you sure you want to sign out? Any unsaved changes will be lost.
+                  Are you sure you want to sign out? Any unsaved changes will be
+                  lost.
                 </p>
               </div>
 
@@ -230,7 +343,7 @@ export default function ChurchLayout({
                   onClick={async () => {
                     handleCloseModal();
                     await signOut();
-                    window.location.href = '/login';
+                    window.location.href = "/login";
                   }}
                   className="flex-1 px-4 py-2 text-sm font-medium text-white bg-error-600 hover:bg-error-700 rounded-lg transition-colors focus:ring-2 focus:ring-error-300 focus:outline-none"
                 >
@@ -242,13 +355,13 @@ export default function ChurchLayout({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 interface NavItemProps {
-  href: string
-  icon: string
-  label: string
+  href: string;
+  icon: string;
+  label: string;
 }
 
 function NavItem({ href, icon, label }: NavItemProps) {
@@ -262,5 +375,5 @@ function NavItem({ href, icon, label }: NavItemProps) {
       </span>
       {label}
     </a>
-  )
+  );
 }

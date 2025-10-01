@@ -5,12 +5,7 @@ import { Database } from '@/types/database.types'
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
-  
-  // Only log for main routes, not assets
-  if (!req.nextUrl.pathname.startsWith('/_next') && !req.nextUrl.pathname.includes('.')) {
-    console.log('Middleware called for:', req.nextUrl.pathname)
-  }
-  
+
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -21,29 +16,27 @@ export async function middleware(req: NextRequest) {
           return cookie
         },
         set(name: string, value: string, options: Record<string, unknown> = {}) {
-          console.log(`Setting cookie ${name}`)
-          res.cookies.set({
+          const cookieOptions = {
             name,
             value,
             ...options,
-            httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            sameSite: 'lax' as const,
             path: '/',
-          })
+          }
+          res.cookies.set(cookieOptions)
         },
         remove(name: string, options: Record<string, unknown> = {}) {
-          console.log(`Removing cookie ${name}`)
-          res.cookies.set({
+          const cookieOptions = {
             name,
             value: '',
             ...options,
-            httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            sameSite: 'lax' as const,
             path: '/',
             maxAge: 0,
-          })
+          }
+          res.cookies.set(cookieOptions)
         },
       },
     }
@@ -51,35 +44,32 @@ export async function middleware(req: NextRequest) {
 
   const url = req.nextUrl.clone()
   const pathname = url.pathname
-   console.log('------> Current url:', url)
-  console.log('--------> Current pathname:', pathname)
 
   try {
-    // Refresh session if expired
-    const { data: { session }, error } = await supabase.auth.getSession()
-    console.log('Session check:', { hasSession: !!session, error, pathname })
+    // Validate session by contacting Supabase Auth server
+    // Using getUser() instead of getSession() for security
+    const { data: { user } } = await supabase.auth.getUser()
 
     // Public routes that don't require authentication
-    const publicRoutes = ['/', '/login', '/register']
-    
+    const publicRoutes = ['/', '/login', '/register', '/apply-church']
+
     // Check if current path is public
     const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith('/api/public'))
 
-    // If no session and trying to access protected route
-    if (!session && !isPublicRoute) {
-      console.log('Redirecting to login - no session detected')
+    // If no user and trying to access protected route
+    if (!user && !isPublicRoute) {
       url.pathname = '/login'
       return NextResponse.redirect(url)
     }
 
-    // If has session but trying to access auth pages
-    if (session && (pathname === '/login' || pathname === '/register')) {
+    // If has user but trying to access auth pages
+    if (user && (pathname === '/login' || pathname === '/register')) {
       // Get user profile to determine redirect (with error handling)
       try {
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
-          .eq('id', session.user.id)
+          .eq('id', user.id)
           .single()
 
         if (profile) {
@@ -91,39 +81,35 @@ export async function middleware(req: NextRequest) {
           }
           return NextResponse.redirect(url)
         }
+        // If no profile, allow access to auth pages to show error
       } catch (error) {
-        console.log('Profile fetch failed (database may not be set up):', error)
-        // Default redirect to church page if database isn't set up
-        url.pathname = '/church'
-        return NextResponse.redirect(url)
+        // Don't redirect if profile doesn't exist - let the page handle it
+        // This prevents redirect loops when database isn't set up
       }
     }
 
     // Role-based route protection
-    if (session && pathname.startsWith('/church')) {
+    if (user && pathname.startsWith('/church')) {
       try {
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
-          .eq('id', session.user.id)
+          .eq('id', user.id)
           .single()
 
         if (profile && profile.role !== 'CHURCH_ADMIN' && profile.role !== 'SYSTEM_ADMIN') {
           // For now, allow all authenticated users to access /church
           // Later you can create a /member route for regular members
-          console.log('Member user accessing /church - allowing access for now')
           // url.pathname = '/member'
           // return NextResponse.redirect(url)
         }
       } catch (error) {
-        console.log('Profile check failed for /church route:', error)
         // Allow access if profile doesn't exist (development fallback)
       }
     }
 
     return res
   } catch (error) {
-    console.error('Middleware error:', error)
     return res
   }
 }
