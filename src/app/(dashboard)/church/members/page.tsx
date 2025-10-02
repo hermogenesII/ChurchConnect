@@ -16,28 +16,17 @@ export default function MembersPage() {
   // Fetch members from the same church
   useEffect(() => {
     const fetchMembers = async () => {
-      console.log('fetchMembers called')
-      console.log('Current user:', currentUser)
-      console.log('Church ID:', currentUser?.church_id)
-      console.log('Auth loading:', authLoading)
-
       if (!currentUser?.church_id) {
-        console.log('No church_id found, loading all members for debugging')
-        // For debugging: fetch all members if no church_id
+        // Fetch all members if no church_id (for development)
         try {
-          const { data, error } = await supabase
+          const { data } = await supabase
             .from('profiles')
             .select('*')
             .order('name')
 
-          if (error) {
-            console.error('Error fetching all members:', error)
-          } else {
-            console.log('All members fetched:', data)
-            setMembers(data || [])
-          }
-        } catch (error) {
-          console.error('Error fetching all members:', error)
+          setMembers(data || [])
+        } catch {
+          // Silent fail
         } finally {
           setMembersLoading(false)
         }
@@ -45,21 +34,15 @@ export default function MembersPage() {
       }
 
       try {
-        console.log('Fetching members for church:', currentUser.church_id)
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('profiles')
           .select('*')
           .eq('church_id', currentUser.church_id)
           .order('name')
 
-        if (error) {
-          console.error('Error fetching members:', error)
-        } else {
-          console.log('Members fetched for church:', data)
-          setMembers(data || [])
-        }
-      } catch (error) {
-        console.error('Error fetching members:', error)
+        setMembers(data || [])
+      } catch {
+        // Silent fail
       } finally {
         setMembersLoading(false)
       }

@@ -1,6 +1,11 @@
+'use client'
+
 import Link from 'next/link'
+import { useAuth } from '@/hooks/use-auth'
 
 export function Hero() {
+  const { user, profile, loading } = useAuth()
+
   return (
     <section
       className="relative bg-cover bg-center bg-no-repeat overflow-hidden min-h-screen flex items-center"
@@ -19,32 +24,64 @@ export function Hero() {
         <div className="text-center">
           {/* Main heading */}
           <h1 className="font-display font-bold text-white text-4xl sm:text-5xl lg:text-6xl xl:text-7xl leading-tight">
-            Connect with Your
-            <span className="block text-secondary-300">Church Community</span>
+            {user ? (
+              <>
+                Welcome Back,
+                <span className="block text-secondary-300">{profile?.name || 'Friend'}!</span>
+              </>
+            ) : (
+              <>
+                Connect with Your
+                <span className="block text-secondary-300">Church Community</span>
+              </>
+            )}
           </h1>
 
           {/* Subtitle */}
           <p className="mt-6 text-gray-200 max-w-2xl mx-auto text-lg lg:text-xl leading-relaxed px-4 lg:px-0">
-            Stay connected with your church family, participate in events, share
-            prayer requests, and grow together in faith.
+            {user
+              ? "Continue your journey of faith with your church community."
+              : "Stay connected with your church family, participate in events, share prayer requests, and grow together in faith."
+            }
           </p>
 
           {/* CTA buttons */}
-          <div className="mt-10 flex flex-col md:flex-row gap-4 items-center justify-center px-6 md:px-0">
-            <Link
-              href="/register"
-              className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 w-full md:w-auto py-4 md:py-3 px-8 text-lg md:text-base text-center inline-block"
-            >
-              Join Our Community
-            </Link>
+          {!loading && (
+            <div className="mt-10 flex flex-col md:flex-row gap-4 items-center justify-center px-6 md:px-0">
+              {user ? (
+                <>
+                  <Link
+                    href={profile?.role === 'CHURCH_ADMIN' || profile?.role === 'SYSTEM_ADMIN' ? '/church' : '/member'}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 w-full md:w-auto py-4 md:py-3 px-8 text-lg md:text-base text-center inline-block"
+                  >
+                    Go to Dashboard
+                  </Link>
+                  <Link
+                    href="/church/events"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 w-full md:w-auto py-4 md:py-3 px-8 text-lg md:text-base text-center inline-block"
+                  >
+                    View Events
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/register"
+                    className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 w-full md:w-auto py-4 md:py-3 px-8 text-lg md:text-base text-center inline-block"
+                  >
+                    Join Our Community
+                  </Link>
 
-            <Link
-              href="/login"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 w-full md:w-auto py-4 md:py-3 px-8 text-lg md:text-base text-center inline-block"
-            >
-              Sign In
-            </Link>
-          </div>
+                  <Link
+                    href="/login"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 w-full md:w-auto py-4 md:py-3 px-8 text-lg md:text-base text-center inline-block"
+                  >
+                    Sign In
+                  </Link>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Trust indicator */}
           <p className="mt-8 text-sm text-gray-300">

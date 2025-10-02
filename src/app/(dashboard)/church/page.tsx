@@ -1,9 +1,14 @@
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
+import { useDashboardStats } from "@/hooks/use-dashboard-stats";
+import Link from "next/link";
 
 export default function AdminDashboard() {
-  const { profile, loading } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
+  const { stats, loading: statsLoading } = useDashboardStats();
+
+  const loading = authLoading || statsLoading;
 
   if (loading) {
     return (
@@ -35,30 +40,30 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           title="Total Members"
-          value="248"
-          change="+12"
-          changeType="positive"
+          value={stats.totalMembers.toString()}
+          change={stats.totalMembers > 0 ? "Active" : "No members yet"}
+          changeType={stats.totalMembers > 0 ? "positive" : "neutral"}
           icon="👥"
         />
         <StatCard
           title="Upcoming Events"
-          value="5"
-          change="2 this week"
+          value={stats.upcomingEvents.toString()}
+          change="Coming soon"
           changeType="neutral"
           icon="📅"
         />
         <StatCard
           title="Prayer Requests"
-          value="18"
-          change="+3"
-          changeType="positive"
+          value={stats.prayerRequests.toString()}
+          change="Coming soon"
+          changeType="neutral"
           icon="🙏"
         />
         <StatCard
           title="Weekly Attendance"
-          value="87%"
-          change="+5%"
-          changeType="positive"
+          value={stats.weeklyAttendance}
+          change="Coming soon"
+          changeType="neutral"
           icon="⛪"
         />
       </div>
@@ -102,21 +107,25 @@ export default function AdminDashboard() {
               icon="📢"
               label="Send Announcement"
               description="Notify all church members"
+              href="/church/announcements/new"
             />
             <QuickActionButton
               icon="📅"
               label="Create Event"
               description="Schedule a church activity"
+              href="/church/events/new"
             />
             <QuickActionButton
               icon="👥"
               label="Add Member"
               description="Register new member"
+              href="/church/members/add"
             />
             <QuickActionButton
               icon="📊"
               label="View Reports"
               description="Check attendance & engagement"
+              href="/church/analytics"
             />
           </div>
         </div>
@@ -186,15 +195,20 @@ interface QuickActionButtonProps {
   icon: string;
   label: string;
   description: string;
+  href: string;
 }
 
 function QuickActionButton({
   icon,
   label,
   description,
+  href,
 }: QuickActionButtonProps) {
   return (
-    <button className="w-full flex items-center p-3 rounded-xl border-2 border-gray-100 hover:border-primary-200 hover:bg-primary-50 transition-all group">
+    <Link
+      href={href}
+      className="w-full flex items-center p-3 rounded-xl border-2 border-gray-100 hover:border-primary-200 hover:bg-primary-50 transition-all group"
+    >
       <div className="flex-shrink-0 w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center mr-3 group-hover:bg-primary-200 transition-colors">
         <span className="text-lg">{icon}</span>
       </div>
@@ -202,6 +216,6 @@ function QuickActionButton({
         <p className="font-medium text-primary-900">{label}</p>
         <p className="text-sm text-neutral-600">{description}</p>
       </div>
-    </button>
+    </Link>
   );
 }
